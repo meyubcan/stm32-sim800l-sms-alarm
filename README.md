@@ -1,5 +1,7 @@
 # STM32F407 ve SIM800L ile eşik aşımında SMS uyarısı
 
+> [TECH-OHM](https://tech-ohm.com) açık kaynak projesi
+
 Analog bir değer belirlenen eşiği geçtiğinde SIM800L GSM modülü üzerinden SMS gönderen örnek. Denemede sensör yerine potansiyometre kullandım. Aynı yapı sıcaklık, seviye ya da basınç sensörüyle uzaktan alarm için kullanılabilir.
 
 ## Blok diyagram
@@ -62,4 +64,10 @@ MIT. `Drivers` klasöründeki STM32 HAL ve CMSIS dosyaları kendi lisanslarıyla
 
 ## Yazar
 
-Gömülü Sistem Mühendisi M. Eyüb Can, [TECH-OHM](https://tech-ohm.com)
+Gömülü Sistem Mühendisi M. Eyüb Can, [TECH-OHM](https://tech-ohm.com) kurucusu
+
+## TECH-OHM
+
+[TECH-OHM](https://tech-ohm.com) elektronik kart ve gömülü yazılım tasarlayan bir mühendislik firması. Fikirden seri üretime kadar tasarım işi alıyor, TECH-OHM Akademi'de 12 aylık gömülü sistem eğitimi ve şirketlere özel danışmanlık veriyor.
+
+Web: [tech-ohm.com](https://tech-ohm.com) · E-posta: info@tech-ohm.com
