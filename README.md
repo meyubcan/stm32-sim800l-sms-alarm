@@ -1,73 +1,77 @@
-# STM32F407 ve SIM800L ile eşik aşımında SMS uyarısı
+# GSM SMS alarm with SIM800L
 
-> [TECH-OHM](https://tech-ohm.com) açık kaynak projesi
+STM32F407 · ADC with DMA · AT commands · threshold alert
 
-Analog bir değer belirlenen eşiği geçtiğinde SIM800L GSM modülü üzerinden SMS gönderen örnek. Denemede sensör yerine potansiyometre kullandım. Aynı yapı sıcaklık, seviye ya da basınç sensörüyle uzaktan alarm için kullanılabilir.
+![MCU](https://img.shields.io/badge/MCU-STM32F407VG-03234B?logo=stmicroelectronics&logoColor=white) ![IDE](https://img.shields.io/badge/IDE-STM32CubeIDE-2ea44f) ![License](https://img.shields.io/badge/license-MIT-blue) [![TECH-OHM](https://img.shields.io/badge/by-TECH--OHM-FFD400)](https://tech-ohm.com)
 
-## Blok diyagram
+**English** | [Türkçe](README.tr.md) · An open-source project by [TECH-OHM](https://tech-ohm.com)
+
+An example that sends an SMS through a SIM800L GSM module when an analog value crosses a threshold. I used a potentiometer in place of a sensor. The same structure works as a remote alarm with a temperature, level or pressure sensor.
+
+## Block diagram
 
 ```mermaid
 flowchart LR
-    POT[Potansiyometre ya da analog sensör] -- "PA0, ADC1 + DMA" --> MCU[STM32F407VG]
-    MCU -- "USART2, AT komutları" --- GSM[SIM800L]
-    GSM -- "GSM şebekesi" --> TEL[Telefon, SMS]
-    BAT[3.7 ile 4.2 V, 2 A besleme] --> GSM
+    POT[Potentiometer or analog sensor] -- "PA0, ADC1 + DMA" --> MCU[STM32F407VG]
+    MCU -- "USART2, AT commands" --- GSM[SIM800L]
+    GSM -- "GSM network" --> TEL[Phone, SMS]
+    BAT[3.7 to 4.2 V supply, 2 A] --> GSM
 ```
 
-## Pinler
+## Pins
 
-| Kart pini | Bağlandığı yer | Açıklama |
+| MCU pin | Connects to | Notes |
 |---|---|---|
-| PA0 | potansiyometre orta ucu | ADC1 kanal 0 |
+| PA0 | potentiometer wiper | ADC1 channel 0 |
 | PA2 | SIM800L RXD | USART2 TX, 115200 |
 | PA3 | SIM800L TXD | USART2 RX |
-| GND | SIM800L GND | ortak toprak |
+| GND | SIM800L GND | common ground |
 
-SIM800L'i kartın 3.3 V ya da 5 V pininden besleme. Modül şebekeye bağlanırken 2 A'e kadar anlık akım çekiyor ve 3.7 ile 4.2 V arası istiyor. Ayrı bir Li-ion pil ya da akımı yeten bir regülatör kullan, beslemenin dibine de büyük bir kondansatör koy. Gerilim çöktüğünde modül sürekli yeniden başlar, en sık yaşanan sorun bu.
+Do not power the SIM800L from the board's 3.3 V or 5 V pin. The module draws bursts of up to 2 A while registering on the network and needs 3.7 to 4.2 V. Use a separate Li-ion cell or a regulator that can supply the current, with a large capacitor right at the module. If the voltage sags the module keeps rebooting, which is the most common problem with it.
 
-## Nasıl çalışıyor
+## How it works
 
-ADC, DMA ile sürekli çevrim yapıyor ve son değer `pot1` değişkeninde duruyor. Ana döngü saniyede bir bu değere bakıyor:
+The ADC converts continuously with DMA and the latest value sits in `pot1`. The main loop checks it once a second:
 
-- Değer 3000'i geçtiyse ve daha önce SMS atılmadıysa mesaj gönderiliyor.
-- Değer 2800'ün altına inince sistem yeniden kuruluyor.
+- If the value is above 3000 and no SMS has been sent yet, a message goes out.
+- When the value drops below 2800 the alarm is re-armed.
 
-Aradaki 200 birimlik fark önemli. Olmasaydı değer eşik civarında gezinirken art arda onlarca SMS giderdi.
+The 200-count gap matters. Without it, a value hovering at the threshold would send dozens of messages in a row.
 
-SMS gönderme sırası:
+The SMS sequence:
 
 ```
 AT
-AT+CMGF=1                  metin modu
-AT+CMGS="05XXXXXXXXX"      alıcı numarası
+AT+CMGF=1                  text mode
+AT+CMGS="05XXXXXXXXX"      recipient
 UYARI: POT degeri 3000'u gecti!
-Ctrl+Z (0x1A)              mesajı gönder
+Ctrl+Z (0x1A)              send
 ```
 
-## Kullanmadan önce
+## Before you use it
 
-`main.c` içindeki `05XXXXXXXXX` yerine kendi numaranı yaz. Eşikleri de aynı yerde değiştirebilirsin.
+Replace `05XXXXXXXXX` in `main.c` with your own number. The thresholds are in the same place.
 
-## Eksikler
+## Limitations
 
-- Modülün cevapları okunmuyor, komutlar arasında sabit süre bekleniyor. Modül `ERROR` dönse de yazılım fark etmiyor.
-- Şebekeye kayıt (`AT+CREG?`) kontrol edilmiyor.
-- `SIM800_Read_SMS()` fonksiyonu gelen mesajı okumak için yazılı, ama ana döngüden çağrılmıyor.
+- The module's replies are not read. Commands are separated by fixed delays, so the firmware does not notice an `ERROR`.
+- Network registration (`AT+CREG?`) is not checked.
+- `SIM800_Read_SMS()` exists for reading incoming messages but is not called from the main loop.
 
-## Derleme
+## Build
 
-STM32CubeIDE'de `File > Import > Existing Projects into Workspace` ile klasörü seç. İşlemci STM32F407VG.
+In STM32CubeIDE use `File > Import > Existing Projects into Workspace` and select this folder.
 
-## Lisans
+## License
 
-MIT. `Drivers` klasöründeki STM32 HAL ve CMSIS dosyaları kendi lisanslarıyla gelir.
+MIT. The STM32 HAL and CMSIS files under `Drivers` keep their own licenses.
 
-## Yazar
+## Author
 
-Gömülü Sistem Mühendisi M. Eyüb Can, [TECH-OHM](https://tech-ohm.com) kurucusu
+M. Eyüb Can, embedded systems engineer and founder of [TECH-OHM](https://tech-ohm.com)
 
-## TECH-OHM
+## About TECH-OHM
 
-[TECH-OHM](https://tech-ohm.com) elektronik kart ve gömülü yazılım tasarlayan bir mühendislik firması. Fikirden seri üretime kadar tasarım işi alıyor, TECH-OHM Akademi'de 12 aylık gömülü sistem eğitimi ve şirketlere özel danışmanlık veriyor.
+[TECH-OHM](https://tech-ohm.com) designs electronic boards and embedded software, from the first schematic to series production. We also run a 12-month embedded systems training program and consult for engineering teams.
 
-Web: [tech-ohm.com](https://tech-ohm.com) · E-posta: info@tech-ohm.com
+Web: [tech-ohm.com](https://tech-ohm.com) · Email: info@tech-ohm.com
