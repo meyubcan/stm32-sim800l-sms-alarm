@@ -8,7 +8,7 @@ Analog bir değer belirlenen eşiği geçtiğinde SIM800L GSM modülü üzerinde
 flowchart LR
     POT[Potansiyometre ya da analog sensör] -- "PA0, ADC1 + DMA" --> MCU[STM32F407VG]
     MCU -- "USART2, AT komutları" --- GSM[SIM800L]
-    GSM -- GSM şebekesi --> TEL[Telefon, SMS]
+    GSM -- "GSM şebekesi" --> TEL[Telefon, SMS]
     BAT[3.7 ile 4.2 V, 2 A besleme] --> GSM
 ```
 
