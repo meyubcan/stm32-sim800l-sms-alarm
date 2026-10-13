@@ -44,7 +44,7 @@ The SMS sequence:
 AT
 AT+CMGF=1                  text mode
 AT+CMGS="05XXXXXXXXX"      recipient
-UYARI: POT degeri 3000'u gecti!
+WARNING: value is above 3000!
 Ctrl+Z (0x1A)              send
 ```
 

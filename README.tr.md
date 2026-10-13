@@ -42,7 +42,7 @@ SMS gönderme sırası:
 AT
 AT+CMGF=1                  metin modu
 AT+CMGS="05XXXXXXXXX"      alıcı numarası
-UYARI: POT degeri 3000'u gecti!
+WARNING: value is above 3000!
 Ctrl+Z (0x1A)              mesajı gönder
 ```
 

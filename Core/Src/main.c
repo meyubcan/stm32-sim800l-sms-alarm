@@ -27,11 +27,11 @@
 
 uint32_t pot1;
 
-char sms_mesaji[100];              // SMS içeriği için buffer
-uint8_t sms_gonderildi = 0;        // Tekrar tekrar SMS atmamak için flag
+char sms_mesaji[100];              // buffer for the SMS command
+uint8_t sms_gonderildi = 0;        // set once an SMS has gone out, so it is not sent again and again
 
-char sim800_rx_buffer[200];   // UART RX için buffer
-char gelen_sms[160];          // Temizlenmiş mesaj içeriği
+char sim800_rx_buffer[200];   // UART RX buffer
+char gelen_sms[160];          // message text with the header lines stripped
 
 
 /* USER CODE END Includes */
@@ -78,8 +78,8 @@ void SIM800_Send_AT(char *komut, uint16_t bekleme_ms) {
 }
 
 void SIM800_Send_SMS(char *numara, char *mesaj) {
-    SIM800_Send_AT("AT", 500);               // AT ile başla
-    SIM800_Send_AT("AT+CMGF=1", 500);        // Text mode
+    SIM800_Send_AT("AT", 500);               // start with a plain AT
+    SIM800_Send_AT("AT+CMGF=1", 500);        // text mode
 
     sprintf(sms_mesaji, "AT+CMGS=\"%s\"", numara);
     SIM800_Send_AT(sms_mesaji, 500);
@@ -89,25 +89,25 @@ void SIM800_Send_SMS(char *numara, char *mesaj) {
     uint8_t ctrl_z = 26;  // Ctrl+Z
     HAL_UART_Transmit(&huart2, &ctrl_z, 1, HAL_MAX_DELAY);
 
-    HAL_Delay(5000); // SMS gönderme süresi
+    HAL_Delay(5000); // give the module time to send
 
 }
 
 void SIM800_Read_SMS(void) {
     SIM800_Send_AT("AT+CMGF=1", 500);
     SIM800_Send_AT("AT+CPMS=\"SM\"", 500);
-    SIM800_Send_AT("AT+CMGL=\"REC UNREAD\"", 1000);  // Okunmamış mesajları getir
+    SIM800_Send_AT("AT+CMGL=\"REC UNREAD\"", 1000);  // list unread messages
 
-    // UART ile gelen veriyi al
+    // Read what the module sent back
     memset(sim800_rx_buffer, 0, sizeof(sim800_rx_buffer));
     HAL_UART_Receive(&huart2, (uint8_t*)sim800_rx_buffer, sizeof(sim800_rx_buffer), 2000);
 
-    // Gelen mesajı ayıkla
-    char *msg_start = strstr(sim800_rx_buffer, "\n");  // İlk newline'dan sonrasını al
+    // Pull the message text out of the reply
+    char *msg_start = strstr(sim800_rx_buffer, "\n");  // skip to the first newline
     if (msg_start != NULL) {
-        msg_start = strstr(msg_start + 1, "\n");  // 2. newline (mesaj başı)
+        msg_start = strstr(msg_start + 1, "\n");  // second newline, where the message starts
         if (msg_start != NULL) {
-            msg_start++;  // "\n" sonrası
+            msg_start++;  // step past the "\n"
             strncpy(gelen_sms, msg_start, 159);
             gelen_sms[159] = '\0';  // null-terminate
         }
@@ -167,16 +167,16 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  	  if (pot1 > 3000 && sms_gonderildi == 0)
 	  	  {
-	          SIM800_Send_SMS("05XXXXXXXXX", "UYARI: POT degeri 3000'u gecti!");
-	          sms_gonderildi = 1;  // Bir kez SMS gönder, tekrar etmesin
+	          SIM800_Send_SMS("05XXXXXXXXX", "WARNING: value is above 3000!");
+	          sms_gonderildi = 1;  // send once, do not repeat
 	      }
 
-	      // İsteğe bağlı: tekrar tetiklemek için 3000 altına düştüğünde sıfırla
+	      // Re-arm when the value drops below 2800
 	      if (pot1 < 2800) {
 	          sms_gonderildi = 0;
 	      }
 
-	      HAL_Delay(1000);  // Bekleme süresi
+	      HAL_Delay(1000);  // check once a second
 
 
   }
